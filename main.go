@@ -97,14 +97,5 @@ func main() {
 		}(node)
 	}
 
-	port := ":8080"
-	lis, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	log.Printf("Raft Listening on %s", port)
-	s := grpc.NewServer()
-	if err = s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	select {}
 }
