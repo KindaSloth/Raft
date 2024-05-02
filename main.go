@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -36,6 +37,7 @@ type Node struct {
 func (node *Node) Run() {
 	currentState := fmt.Sprintf("Node ID: %s, Current State: %s", strconv.Itoa(node.Id), node.State)
 	fmt.Println(currentState)
+	time.Sleep(5 * time.Second)
 }
 
 func startNodes(x int) []Node {
@@ -87,9 +89,22 @@ func startNodes(x int) []Node {
 func main() {
 	nodes := startNodes(4)
 
-	for {
-		for _, node := range nodes {
-			node.Run()
-		}
+	for _, node := range nodes {
+		go func(node Node) {
+			for {
+				node.Run()
+			}
+		}(node)
+	}
+
+	port := ":8080"
+	lis, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	log.Printf("Raft Listening on %s", port)
+	s := grpc.NewServer()
+	if err = s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
