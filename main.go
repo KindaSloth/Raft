@@ -32,6 +32,7 @@ type Node struct {
 	GrpcServer *grpc.Server
 }
 
+// Node State Machine (get/run current state)
 func (node *Node) Run() {
 	currentState := fmt.Sprintf("Node ID: %s, Current State: %s", strconv.Itoa(node.Id), node.State)
 	fmt.Println(currentState)
