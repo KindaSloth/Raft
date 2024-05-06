@@ -13,7 +13,7 @@
     in {
       devShell = pkgs.mkShell { 
         NIX_CONFIG = "experimental-features = nix-command flakes";
-        nativeBuildInputs = with pkgs; [ nix git go golangci-lint gopls protobuf protoc-gen-go zsh ];
+        nativeBuildInputs = with pkgs; [ nix git go golangci-lint gopls protobuf protoc-gen-go protoc-gen-go-grpc zsh ];
         shellHook = ''
           zsh
         '';

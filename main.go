@@ -1,6 +1,7 @@
 package main
 
 import (
+	context "context"
 	"fmt"
 	"log"
 	"net"
@@ -8,7 +9,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
+
+type server struct{}
 
 type Config struct {
 	// randomized to be between 150ms and 300ms
@@ -23,7 +27,7 @@ type Node struct {
 	Config Config
 	// Follower | Candidate | Leader
 	State string
-	Logs  []Log
+	Logs  []*Log
 	// current node term
 	Term int
 	// how many votes node has received
@@ -40,9 +44,37 @@ func (node *Node) Run() {
 	time.Sleep(5 * time.Second)
 }
 
+func (s *server) AppendEntries(ctx context.Context, req *AppendEntriesRequest) (*AppendEntriesResponse, error) {
+	log.Printf("Received AppendEntries request")
+	return &AppendEntriesResponse{Term: 1, Success: true}, nil
+}
+
+func (s *server) RequestVote(ctx context.Context, req *RequestVoteRequest) (*RequestVoteResponse, error) {
+	log.Printf("Received RequestVote request")
+	return &RequestVoteResponse{Term: 1, VoteGranted: false}, nil
+}
+
+func (s *server) mustEmbedUnimplementedRaftServer() {}
+
+// just testing servers
+func (node *Node) SendMessageTest() {
+	conn, err := grpc.Dial("localhost:8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect: %v", err)
+	}
+	defer conn.Close()
+	client := NewRaftClient(conn)
+
+	res, err := client.AppendEntries(context.Background(), &AppendEntriesRequest{LeaderTerm: 1, LeaderId: 1, Entries: node.Logs})
+	if err != nil {
+		log.Fatalf("Failed to send message: %v", err)
+	}
+	log.Printf("Response from server: %s", res.String())
+}
+
 func startNodes(x int) []Node {
 	var servers []string
-	var logs []Log
+	var logs []*Log
 
 	config := Config{
 		ElectionTimeout:  150,
@@ -61,6 +93,7 @@ func startNodes(x int) []Node {
 		log.Printf("Listening on %s", port)
 
 		s := grpc.NewServer()
+		RegisterRaftServer(s, &server{})
 		go func() {
 			if err := s.Serve(lis); err != nil {
 				log.Fatalf("failed to serve: %v", err)
